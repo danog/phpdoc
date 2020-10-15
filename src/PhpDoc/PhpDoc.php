@@ -474,7 +474,7 @@ class PhpDoc
      */
     public function shouldIgnore(string $class): bool
     {
-        return !($this->ignore)($class);
+        return $this->ignore ? !($this->ignore)($class) : false;
     }
 
     /**
