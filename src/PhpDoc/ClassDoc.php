@@ -122,7 +122,7 @@ class ClassDoc extends GenericDoc
             foreach ($this->constants as $name => [, $description]) {
                 $description = \trim($description);
                 $description = \str_replace("\n", "\n  ", $description);
-                $init .= "* {$this->className}::$name: $description\n";
+                $init .= "* `{$this->className}::$name`: $description\n";
                 $init .= "\n";
             }
         }
