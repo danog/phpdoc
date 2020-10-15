@@ -9,12 +9,23 @@ use phpDocumentor\Reflection\DocBlock\Tags\Return_;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 
+/**
+ * Method documentation builder.
+ *
+ * @internal
+ */
 class MethodDoc extends GenericDoc
 {
     private Return_ $return;
     private string $psalmReturn;
     private array $params = [];
     private array $psalmParams = [];
+    /**
+     * Constructor.
+     *
+     * @param PhpDoc $phpDocBuilder
+     * @param ReflectionFunctionAbstract $method
+     */
     public function __construct(PhpDoc $phpDocBuilder, ReflectionFunctionAbstract $method)
     {
         $this->builder = $phpDocBuilder;
@@ -23,9 +34,9 @@ class MethodDoc extends GenericDoc
         if (!$doc) {
             $this->ignore = true;
             if ($method instanceof ReflectionMethod) {
-                \fprintf(STDERR, $method->getDeclaringClass()->getName().'::'.$method->getName().' has no PHPDOC!\n');
+                \fprintf(STDERR, $method->getDeclaringClass()->getName().'::'.$method->getName().' has no PHPDOC!'.PHP_EOL);
             } else {
-                \fprintf(STDERR, $method->getName().' has no PHPDOC!\n');
+                \fprintf(STDERR, $method->getName()." has no PHPDOC!".PHP_EOL);
             }
             return;
         }
@@ -74,6 +85,11 @@ class MethodDoc extends GenericDoc
         }
     }
 
+    /**
+     * Get method signature.
+     *
+     * @return string
+     */
     public function getSignature(): string
     {
         $sig = $this->name;
@@ -91,6 +107,11 @@ class MethodDoc extends GenericDoc
         }
         return $sig;
     }
+    /**
+     * Generate markdown for method.
+     *
+     * @return string
+     */
     public function format(): string
     {
         $sig = '### `'.$this->getSignature()."`";

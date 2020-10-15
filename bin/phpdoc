@@ -5,12 +5,17 @@ use danog\PhpDoc\PhpDocBuilder;
 
 if ($argc < 2) {
     $me = $argv[0];
-    fprintf(stderr, "Usage: $me filePath [namespace]\n");
+    fprintf(STDERR, "Usage: $me filePath [namespace]".PHP_EOL);
     die(1);
+}
+
+if (!class_exists(PhpDocBuilder::class)) {
+    require 'vendor/autoload.php';
 }
 
 $path = $argv[1];
 $namespace = $argv[2] ?? '';
+
 
 PhpDocBuilder::fromNamespace($namespace)
     ->setOutput($path)

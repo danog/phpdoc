@@ -2,7 +2,6 @@
 
 namespace danog\PhpDoc\PhpDoc;
 
-use danog\PhpDoc\PhpDocBuilder;
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlock\Description;
 use phpDocumentor\Reflection\DocBlock\Tags\Author;
@@ -12,7 +11,14 @@ use phpDocumentor\Reflection\DocBlock\Tags\Reference\Fqsen;
 use phpDocumentor\Reflection\DocBlock\Tags\Reference\Url;
 use phpDocumentor\Reflection\DocBlock\Tags\See;
 use phpDocumentor\Reflection\Fqsen as ReflectionFqsen;
+use ReflectionClass;
+use ReflectionFunction;
 
+/**
+ * Generic documentation builder.
+ *
+ * @internal
+ */
 abstract class GenericDoc
 {
     /**
@@ -59,6 +65,12 @@ abstract class GenericDoc
      * Fully qualified class name.
      */
     private string $resolvedClassName;
+    /**
+     * Constructor.
+     *
+     * @param DocBlock $doc
+     * @param ReflectionClass|ReflectionFunction $reflectionClass
+     */
     public function __construct(DocBlock $doc, $reflectionClass)
     {
         $empty = [];
@@ -89,6 +101,11 @@ abstract class GenericDoc
         $this->authors = \array_unique($this->authors);
     }
 
+    /**
+     * Get see also list.
+     *
+     * @return string
+     */
     public function seeAlso(): string
     {
         $empty = [];
@@ -145,6 +162,11 @@ abstract class GenericDoc
         }
         return $seeAlso;
     }
+    /**
+     * Generate markdown.
+     *
+     * @return string
+     */
     public function format(): string
     {
         $authors = '';
@@ -154,8 +176,8 @@ abstract class GenericDoc
         $seeAlso = $this->seeAlso();
         $image = $this->builder->getImage();
         $index = '';
-        $count = count(explode('\\', $this->resolvedClassName)) - 1;
-        $index .= str_repeat($count, '../');
+        $count = \count(\explode('\\', $this->resolvedClassName)) - 2;
+        $index .= \str_repeat('../', $count);
         $index .= 'index.md';
         return <<<EOF
         ---
@@ -174,10 +196,16 @@ abstract class GenericDoc
         $seeAlso
         EOF;
     }
-    public function resolveTypeAlias(string $o): string
+    /**
+     * Resolve type alias.
+     *
+     * @param string $type Type
+     * @return string
+     */
+    public function resolveTypeAlias(string $type): string
     {
         $resolved = [];
-        $result = $this->builder->resolveTypeAlias($this->className, $o, $resolved);
+        $result = $this->builder->resolveTypeAlias($this->className, $type, $resolved);
         foreach ($resolved as $type) {
             if (PhpDoc::isScalar($type)) {
                 continue;
@@ -196,6 +224,11 @@ abstract class GenericDoc
         return $result;
     }
 
+    /**
+     * Whether we should not store this class.
+     *
+     * @return boolean
+     */
     public function shouldIgnore(): bool
     {
         return $this->ignore;

@@ -24,6 +24,11 @@ use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 use ReflectionFunction;
 
+/**
+ * Documentation builder.
+ *
+ * @internal
+ */
 class PhpDoc
 {
     /**
@@ -33,7 +38,7 @@ class PhpDoc
     /**
      * Scan mode.
      */
-    private int $mode;
+    private int $mode = ClassFinder::ALLOW_ALL | ClassFinder::RECURSIVE_MODE;
     /**
      * Docblock factory.
      */
@@ -64,7 +69,7 @@ class PhpDoc
     /**
      * Project image.
      */
-    private string $image;
+    private string $image = '';
     /**
      * Use map.
      *
@@ -162,7 +167,7 @@ class PhpDoc
      */
     public function run(): self
     {
-        $classList = ClassFinder::getClassesInNamespace($this->namespace, $this->mode | ClassFinder::RECURSIVE_MODE);
+        $classList = ClassFinder::getClassesInNamespace($this->namespace, $this->mode);
         foreach ($classList as $class) {
             $this->addTypeAliases($class);
         }
@@ -213,11 +218,11 @@ class PhpDoc
             $path .= '.md';
             if ($class instanceof FunctionDoc) {
                 $functions .= "* [$line]($path)\n";
-            } else if ($reflectionClass->isTrait()) {
+            } elseif ($reflectionClass->isTrait()) {
                 $traits .= "* [$line]($path)\n";
-            } else if ($reflectionClass->isAbstract()) {
+            } elseif ($reflectionClass->isAbstract()) {
                 $abstract .= "* [$line]($path)\n";
-            } else if ($reflectionClass->isInterface()) {
+            } elseif ($reflectionClass->isInterface()) {
                 $interfaces .= "* [$line]($path)\n";
             } else {
                 $classes .= "* [$line]($path)\n";
@@ -233,16 +238,20 @@ class PhpDoc
         $traits = $traits ? "## Traits\n$traits" : '';
         $abstract = $abstract ? "## Abstract classes\n$abstract" : '';
         $interfaces = $interfaces ? "## Interfaces\n$interfaces" : '';
-        $functions = $functions ? "## Functions\n$functions" : '';
-        
+        $classes = $classes ? "## Classes\n$classes" : '';
+
+        $description = explode("\n", $this->description);
+        $description = $description[0] ?? '';
+
         $image = $this->getImage();
         $index = <<<EOF
         ---
-        title: $this->title
-        description: $this->description$image
+        title: $this->name
+        description: $description$image
         ---
-        # `$this->title`
+        # `$this->name`
 
+        $description
 
         $functions
         $interfaces
@@ -259,7 +268,7 @@ class PhpDoc
         $handle = \fopen(self::createDir($fName), 'w+');
         \fwrite($handle, $index);
         \fclose($handle);
-        
+
         return $this;
     }
     /**
@@ -301,12 +310,19 @@ class PhpDoc
         if (str_ends_with($name, '[]')) {
             return $this->resolveTypeAlias($fromClass, \substr($name, 0, -2), $resolved)."[]";
         }
-        $name = \rtrim(\ltrim($name, '('), ')');
+        if ($name[0] === '(' && $name[strlen($name) - 1] === ')') {
+            $name = $this->resolveTypeAlias($fromClass, substr($name, 1, -1), $resolved);
+            return "($name)";
+        }
         if (\count($split = self::splitOnWithoutParenthesis('|', $name)) > 1) {
             foreach ($split as &$name) {
                 $name = $this->resolveTypeAlias($fromClass, $name, $resolved);
             }
             return \implode('|', $split);
+        }
+        if (str_starts_with($name, 'callable(')) {
+            $name = $this->resolveTypeAlias($fromClass, substr($name, 9, -1), $resolved);
+            return "callable($name)";
         }
         if (str_starts_with($name, 'array{')) {
             $new = '';
@@ -426,6 +442,7 @@ class PhpDoc
     {
         $name = $class->getName();
         $fName = $this->output;
+        $fName .= DIRECTORY_SEPARATOR;
         $fName .= \str_replace('\\', DIRECTORY_SEPARATOR, $name);
         $fName .= '.md';
 

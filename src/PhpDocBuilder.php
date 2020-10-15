@@ -19,7 +19,11 @@
 namespace danog\PhpDoc;
 
 use danog\PhpDoc\PhpDoc\PhpDoc;
+use phpDocumentor\Reflection\DocBlock\Tags\Author;
 
+/**
+ * PHP documentation builder.
+ */
 final class PhpDocBuilder
 {
     /**

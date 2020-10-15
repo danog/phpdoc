@@ -9,6 +9,11 @@ use ReflectionClass;
 use ReflectionClassConstant;
 use ReflectionMethod;
 
+/**
+ * Class documentation builder.
+ *
+ * @internal
+ */
 class ClassDoc extends GenericDoc
 {
     /**
@@ -33,7 +38,7 @@ class ClassDoc extends GenericDoc
         $this->name = $reflectionClass->getName();
         $doc = $reflectionClass->getDocComment();
         if (!$doc) {
-            \fprintf(STDERR, $reflectionClass->getName()." has no PHPDOC\n");
+            \fprintf(STDERR, $reflectionClass->getName()." has no PHPDOC".PHP_EOL);
             $this->ignore = true;
             return;
         }
@@ -43,7 +48,8 @@ class ClassDoc extends GenericDoc
 
         $tags = $doc->getTags();
         foreach ($tags as $tag) {
-            if ($tag instanceof Property) {
+            if ($tag instanceof Property && $tag->getVariableName()) {
+                /** @psalm-suppress InvalidPropertyAssignmentValue */
                 $this->properties[$tag->getVariableName()] = [
                     $tag->getType(),
                     $tag->getDescription()
@@ -55,6 +61,7 @@ class ClassDoc extends GenericDoc
                 [$varName, $description] = \explode(" ", $description, 2);
                 $type = \str_replace('@property ', '', $type);
                 $description ??= '';
+                /** @psalm-suppress InvalidPropertyAssignmentValue */
                 $this->properties[$varName] = [
                     $type,
                     $description
@@ -101,6 +108,11 @@ class ClassDoc extends GenericDoc
         $this->methods = \array_filter($this->methods, fn (MethodDoc $doc): bool => !$doc->shouldIgnore());
     }
 
+    /**
+     * Generate markdown for class.
+     *
+     * @return string
+     */
     public function format(): string
     {
         $init = parent::format();

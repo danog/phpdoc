@@ -1,0 +1,122 @@
+---
+title: danog\PhpDoc\PhpDocBuilder: PHP documentation builder.
+description: 
+
+---
+# `danog\PhpDoc\PhpDocBuilder`
+[Back to index](../../index.md)
+
+> Author: Daniil Gentili <daniil@daniil.it>  
+  
+
+PHP documentation builder.  
+
+
+
+## Method list:
+* `fromNamespace(string $namespace): self`
+* `setAuthors(\phpDocumentor\Reflection\DocBlock\Tags\Author[] $authors): self`
+* `setMode(int $mode): self`
+* `setFilter(callable $ignore): self`
+* `setOutput(string $output): self`
+* `setName(string $name): self`
+* `setDescription(string $description): self`
+* `setImage(string $image): self`
+* `run(): self`
+
+## Methods:
+### `fromNamespace(string $namespace): self`
+
+Create docblock builder.
+
+
+Parameters:
+* `$namespace`: `string` Namespace (defaults to package namespace)  
+
+
+
+### `setAuthors(\phpDocumentor\Reflection\DocBlock\Tags\Author[] $authors): self`
+
+Set authors.
+
+
+Parameters:
+* `$authors`: `\phpDocumentor\Reflection\DocBlock\Tags\Author[]` Authors  
+
+
+#### See also: 
+* `\phpDocumentor\Reflection\DocBlock\Tags\Author`
+
+
+
+
+### `setMode(int $mode): self`
+
+Set scan mode.
+
+
+Parameters:
+* `$mode`: `int` Scan mode.  
+
+
+
+### `setFilter(callable $ignore): self`
+
+Set filter to ignore certain classes.
+
+
+Parameters:
+* `$ignore`: `callable`   
+  Full type:
+  ```
+  callable(class-string)
+  ```
+
+
+
+### `setOutput(string $output): self`
+
+Set output directory.
+
+
+Parameters:
+* `$output`: `string` Output directory  
+
+
+
+### `setName(string $name): self`
+
+Set project name.
+
+
+Parameters:
+* `$name`: `string` Name  
+
+
+
+### `setDescription(string $description): self`
+
+Set project description.
+
+
+Parameters:
+* `$description`: `string` Project description  
+
+
+
+### `setImage(string $image): self`
+
+Set project image.
+
+
+Parameters:
+* `$image`: `string` Project image  
+
+
+
+### `run(): self`
+
+Run documentation builder.
+
+
+
