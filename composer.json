@@ -7,7 +7,7 @@
     "keywords": ["phpdoc", "markdown", "documentation", "psalm"],
     "require": {
         "php": ">=7.4.0",
-        "danog/class-finder": "dev-master",
+        "danog/class-finder": "^0.4",
         "phpdocumentor/reflection-docblock": "^5.2"
     },
     "require-dev": {
