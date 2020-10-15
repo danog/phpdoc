@@ -121,7 +121,7 @@ abstract class GenericDoc
                     $seeAlso .= "* `$ref`\n";
                     continue;
                 }
-                $from = \explode('\\', $this->resolvedClassName);
+                $from = \explode('\\', $this->resolvedClassName.".md");
 
                 $relPath = $to;
                 foreach ($from as $depth => $dir) {
