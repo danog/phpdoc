@@ -1,0 +1,17 @@
+#!/usr/bin/env php
+<?php
+
+use danog\PhpDoc\PhpDocBuilder;
+
+if ($argc < 2) {
+    $me = $argv[0];
+    fprintf(stderr, "Usage: $me filePath [namespace]\n");
+    die(1);
+}
+
+$path = $argv[1];
+$namespace = $argv[2] ?? '';
+
+PhpDocBuilder::fromNamespace($namespace)
+    ->setOutput($path)
+    ->run();

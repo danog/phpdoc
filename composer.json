@@ -1,0 +1,40 @@
+{
+    "name": "danog/phpdoc",
+    "description": "Simple markdown PHPDOC documentation generator with psalm type annotation support.",
+    "type": "project",
+    "license": "AGPL-3.0-only",
+    "homepage": "https://phpdoc.daniil.it",
+    "keywords": ["phpdoc", "markdown", "documentation", "psalm"],
+    "require": {
+        "php": ">=7.4.0",
+        "danog/class-finder": "dev-master",
+        "phpdocumentor/reflection-docblock": "^5.2"
+    },
+    "require-dev": {
+        "vimeo/psalm": "dev-master",
+        "amphp/php-cs-fixer-config": "dev-master",
+        "friendsofphp/php-cs-fixer": "^2"
+    },
+    "authors": [{
+        "name": "Daniil Gentili",
+        "email": "daniil@daniil.it"
+    }],
+    "autoload": {
+        "psr-4": {
+            "danog\\PhpDoc\\": "src/"
+        }
+    },
+    "bin": [
+        "bin/phpdoc"
+    ],
+    "scripts": {
+        "check": [
+            "@cs",
+            "@test"
+        ],
+        "cs": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix -v --diff --dry-run",
+        "cs-fix": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix -v --diff",
+        "psalm": "psalm",
+        "docs": "php tools/build_docs.php"
+    }
+}
