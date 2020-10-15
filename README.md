@@ -18,4 +18,4 @@ vendor/bin/phpdoc outputDirectory [ namespace ]
 
 If not provided, `namespace` will default to the namespace of the current package.  
 
-## [API documentation](API)
+## [API documentation](https://phpdoc.daniil.it/API)
