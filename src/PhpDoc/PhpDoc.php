@@ -570,7 +570,7 @@ class PhpDoc
      */
     public function getImage(): string
     {
-        return $this->image ? "image: ".$this->image."\n" : '';
+        return $this->image ? "\nimage: ".$this->image : '';
     }
 
     /**
