@@ -99,7 +99,7 @@ class ClassDoc extends GenericDoc
 
 
         foreach ($reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-            if (str_starts_with($method->getName(), '__') && $method !== '__construct') {
+            if (\str_starts_with($method->getName(), '__') && $method !== '__construct') {
                 continue;
             }
             $this->methods[$method->getName()] = new MethodDoc($this->builder, $method);

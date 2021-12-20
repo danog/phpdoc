@@ -13,6 +13,7 @@ use phpDocumentor\Reflection\DocBlock\Tags\See;
 use phpDocumentor\Reflection\Fqsen as ReflectionFqsen;
 use ReflectionClass;
 use ReflectionFunction;
+use Symfony\Component\Yaml\Escaper;
 
 /**
  * Generic documentation builder.
@@ -179,10 +180,12 @@ abstract class GenericDoc
         $count = \count(\explode('\\', $this->resolvedClassName)) - 2;
         $index .= \str_repeat('../', $count);
         $index .= 'index.md';
+        $titleEscaped = Escaper::escapeWithDoubleQuotes("{$this->name}: {$this->title}");
+        $descriptionEscaped = Escaper::escapeWithDoubleQuotes($this->description);
         return <<<EOF
         ---
-        title: $this->name: $this->title
-        description: $this->description
+        title: $titleEscaped
+        description: $descriptionEscaped
         $image
         ---
         # `$this->name`
@@ -214,7 +217,7 @@ abstract class GenericDoc
             if ($type === $this->resolvedClassName) {
                 continue;
             }
-            if (str_contains($type, ' ')) {
+            if (\str_contains($type, ' ')) {
                 continue;
             }
             try {

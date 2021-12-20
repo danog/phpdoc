@@ -23,6 +23,7 @@ use phpDocumentor\Reflection\DocBlock\Tags\Author;
 use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 use ReflectionFunction;
+use Symfony\Component\Yaml\Escaper;
 
 /**
  * Documentation builder.
@@ -240,14 +241,17 @@ class PhpDoc
         $interfaces = $interfaces ? "## Interfaces\n$interfaces" : '';
         $classes = $classes ? "## Classes\n$classes" : '';
 
-        $description = explode("\n", $this->description);
+        $description = \explode("\n", $this->description);
         $description = $description[0] ?? '';
+
+        $descriptionEscaped = Escaper::escapeWithDoubleQuotes($description);
+        $nameEscaped = Escaper::escapeWithDoubleQuotes($this->name);
 
         $image = $this->getImage();
         $index = <<<EOF
         ---
-        title: $this->name
-        description: $description$image
+        title: $nameEscaped
+        description: $descriptionEscaped$image
         ---
         # `$this->name`
 
@@ -309,11 +313,11 @@ class PhpDoc
      */
     public function resolveTypeAlias(string $fromClass, string $name, array &$resolved): string
     {
-        if (str_ends_with($name, '[]')) {
+        if (\str_ends_with($name, '[]')) {
             return $this->resolveTypeAlias($fromClass, \substr($name, 0, -2), $resolved)."[]";
         }
-        if ($name[0] === '(' && $name[strlen($name) - 1] === ')') {
-            $name = $this->resolveTypeAlias($fromClass, substr($name, 1, -1), $resolved);
+        if ($name[0] === '(' && $name[\strlen($name) - 1] === ')') {
+            $name = $this->resolveTypeAlias($fromClass, \substr($name, 1, -1), $resolved);
             return "($name)";
         }
         if (\count($split = self::splitOnWithoutParenthesis('|', $name)) > 1) {
@@ -322,11 +326,11 @@ class PhpDoc
             }
             return \implode('|', $split);
         }
-        if (str_starts_with($name, 'callable(')) {
-            $name = $this->resolveTypeAlias($fromClass, substr($name, 9, -1), $resolved);
+        if (\str_starts_with($name, 'callable(')) {
+            $name = $this->resolveTypeAlias($fromClass, \substr($name, 9, -1), $resolved);
             return "callable($name)";
         }
-        if (str_starts_with($name, 'array{')) {
+        if (\str_starts_with($name, 'array{')) {
             $new = '';
             $split = self::splitOnWithoutParenthesis(',', \substr($name, 6, -1));
             foreach ($split as $key => $var) {
