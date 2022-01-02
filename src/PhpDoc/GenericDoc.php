@@ -2,6 +2,7 @@
 
 namespace danog\PhpDoc\PhpDoc;
 
+use danog\PhpDoc\PhpDoc;
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlock\Description;
 use phpDocumentor\Reflection\DocBlock\Tags\Author;
@@ -13,7 +14,6 @@ use phpDocumentor\Reflection\DocBlock\Tags\See;
 use phpDocumentor\Reflection\Fqsen as ReflectionFqsen;
 use ReflectionClass;
 use ReflectionFunction;
-use Symfony\Component\Yaml\Escaper;
 
 /**
  * Generic documentation builder.
@@ -175,18 +175,19 @@ abstract class GenericDoc
             $authors .= "> Author: $author  \n";
         }
         $seeAlso = $this->seeAlso();
-        $image = $this->builder->getImage();
+        $frontMatter = $this->builder->getFrontMatter(
+            [
+                'title' => "{$this->name}: {$this->title}",
+                'description' => $this->description
+            ]
+        );
         $index = '';
         $count = \count(\explode('\\', $this->resolvedClassName)) - 2;
         $index .= \str_repeat('../', $count);
         $index .= 'index.md';
-        $titleEscaped = Escaper::escapeWithDoubleQuotes("{$this->name}: {$this->title}");
-        $descriptionEscaped = Escaper::escapeWithDoubleQuotes($this->description);
         return <<<EOF
         ---
-        title: $titleEscaped
-        description: $descriptionEscaped
-        $image
+        $frontMatter
         ---
         # `$this->name`
         [Back to index]($index)

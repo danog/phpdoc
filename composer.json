@@ -4,22 +4,31 @@
     "type": "project",
     "license": "AGPL-3.0-only",
     "homepage": "https://phpdoc.daniil.it",
-    "keywords": ["phpdoc", "markdown", "documentation", "psalm"],
+    "keywords": [
+        "phpdoc",
+        "markdown",
+        "documentation",
+        "psalm"
+    ],
     "require": {
-        "php": ">=7.4.0",
+        "php": "^8.0",
         "danog/class-finder": "^0.4",
         "phpdocumentor/reflection-docblock": "^5.2",
+        "phpstan/phpdoc-parser": "^1.2",
         "symfony/yaml": "^6.0"
     },
     "require-dev": {
         "vimeo/psalm": "dev-master",
         "amphp/php-cs-fixer-config": "dev-master",
-        "friendsofphp/php-cs-fixer": "^2"
+        "friendsofphp/php-cs-fixer": "^2",
+        "phabel/phabel": "^1"
     },
-    "authors": [{
-        "name": "Daniil Gentili",
-        "email": "daniil@daniil.it"
-    }],
+    "authors": [
+        {
+            "name": "Daniil Gentili",
+            "email": "daniil@daniil.it"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "danog\\PhpDoc\\": "src/"
@@ -29,13 +38,24 @@
         "bin/phpdoc"
     ],
     "scripts": {
-        "check": [
-            "@cs",
-            "@test"
+        "build": [
+            "@cs-fix",
+            "@phpdoc"
         ],
         "cs": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix -v --diff --dry-run",
         "cs-fix": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix -v --diff",
         "psalm": "psalm",
-        "docs": "php tools/build_docs.php"
+        "docs": "@phpdoc"
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/package-versions-deprecated": true,
+            "phabel/phabel": true
+        }
+    },
+    "extra": {
+        "phabel": {
+            "revision": 0
+        }
     }
 }

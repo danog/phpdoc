@@ -2,6 +2,7 @@
 
 namespace danog\PhpDoc\PhpDoc;
 
+use danog\PhpDoc\PhpDoc;
 use phpDocumentor\Reflection\DocBlock\Tags\Generic;
 use phpDocumentor\Reflection\DocBlock\Tags\InvalidTag;
 use phpDocumentor\Reflection\DocBlock\Tags\Property;

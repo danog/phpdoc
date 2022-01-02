@@ -2,6 +2,7 @@
 
 namespace danog\PhpDoc\PhpDoc;
 
+use danog\PhpDoc\PhpDoc;
 use ReflectionFunction;
 
 /**

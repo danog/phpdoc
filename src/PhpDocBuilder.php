@@ -18,7 +18,6 @@
 
 namespace danog\PhpDoc;
 
-use danog\PhpDoc\PhpDoc\PhpDoc;
 use phpDocumentor\Reflection\DocBlock\Tags\Author;
 
 /**
@@ -142,11 +141,38 @@ final class PhpDocBuilder
      */
     public function setImage(string $image): self
     {
-        $this->doc->setImage($image);
+        $this->doc->addFrontMatter('image', $image);
+        $this->doc->addIndexFrontMatter('image', $image);
 
         return $this;
     }
 
+    /**
+     * Add Jekyll front matter.
+     *
+     * @param string $key Key
+     * @param string $value Value
+     * @return self
+     */
+    public function addFrontMatter(string $key, string $value): self
+    {
+        $this->doc->addFrontMatter($key, $value);
+
+        return $this;
+    }
+    /**
+     * Add Jekyll index front matter.
+     *
+     * @param string $key Key
+     * @param string $value Value
+     * @return self
+     */
+    public function addIndexFrontMatter(string $key, string $value): self
+    {
+        $this->doc->addIndexFrontMatter($key, $value);
+
+        return $this;
+    }
     /**
      * Run documentation builder.
      *

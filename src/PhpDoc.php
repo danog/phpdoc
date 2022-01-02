@@ -16,9 +16,12 @@
  * @link https://phpdoc.daniil.it PhpDoc documentation
  */
 
-namespace danog\PhpDoc\PhpDoc;
+namespace danog\PhpDoc;
 
 use danog\ClassFinder\ClassFinder;
+use danog\PhpDoc\PhpDoc\ClassDoc;
+use danog\PhpDoc\PhpDoc\FunctionDoc;
+use danog\PhpDoc\PhpDoc\GenericDoc;
 use phpDocumentor\Reflection\DocBlock\Tags\Author;
 use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
@@ -68,9 +71,17 @@ class PhpDoc
      */
     private string $description = 'PHPDOC documentation';
     /**
-     * Project image.
+     * Project front matter.
+     *
+     * @var array<string, string>
      */
-    private string $image = '';
+    private array $frontMatter = [];
+    /**
+     * Index front matter.
+     *
+     * @var array<string, string>
+     */
+    private array $indexFrontMatter = [];
     /**
      * Use map.
      *
@@ -244,14 +255,16 @@ class PhpDoc
         $description = \explode("\n", $this->description);
         $description = $description[0] ?? '';
 
-        $descriptionEscaped = Escaper::escapeWithDoubleQuotes($description);
-        $nameEscaped = Escaper::escapeWithDoubleQuotes($this->name);
+        $frontMatter = $this->getIndexFrontMatter(
+            [
+                'description' => $description,
+                'title' => $this->name,
+            ]
+        );
 
-        $image = $this->getImage();
         $index = <<<EOF
         ---
-        title: $nameEscaped
-        description: $descriptionEscaped$image
+        $frontMatter
         ---
         # `$this->name`
 
@@ -568,25 +581,62 @@ class PhpDoc
     }
 
     /**
-     * Get project image (front matter).
+     * Get front matter.
+     *
+     * @param array<string, string> $init Initial front matter
      *
      * @return string
      */
-    public function getImage(): string
+    public function getFrontMatter(array $init = []): string
     {
-        return $this->image ? "\nimage: ".$this->image : '';
+        $result = '';
+        foreach ($init + $this->frontMatter as $key => $value) {
+            $result .= "$key: ".Escaper::escapeWithDoubleQuotes($value)."\n";
+        }
+        return $result;
     }
 
     /**
-     * Set project image.
+     * Get index front matter.
      *
-     * @param string $image Project image
+     * @param array<string, string> $init Initial front matter
+     *
+     * @return string
+     */
+    private function getIndexFrontMatter(array $init = []): string
+    {
+        $result = '';
+        foreach ($init + $this->indexFrontMatter as $key => $value) {
+            $result .= "$key: ".Escaper::escapeWithDoubleQuotes($value)."\n";
+        }
+        return $result;
+    }
+
+    /**
+     * Add project front matter.
+     *
+     * @param string $key Key
+     * @param string $value Value
      *
      * @return self
      */
-    public function setImage(string $image): self
+    public function addFrontMatter(string $key, string $value): self
     {
-        $this->image = $image;
+        $this->frontMatter[$key] = $value;
+
+        return $this;
+    }
+    /**
+     * Add index front matter.
+     *
+     * @param string $key Key
+     * @param string $value Value
+     *
+     * @return self
+     */
+    public function addIndexFrontMatter(string $key, string $value): self
+    {
+        $this->indexFrontMatter[$key] = $value;
 
         return $this;
     }
