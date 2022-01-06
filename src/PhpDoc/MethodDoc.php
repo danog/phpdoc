@@ -122,7 +122,7 @@ class MethodDoc extends GenericDoc
         $sig .= $this->description;
         $sig .= "\n";
         if ($this->psalmParams || $this->params) {
-            $sig .= "\nParameters:\n";
+            $sig .= "\nParameters:\n\n";
             foreach ($this->params as $name => [$type, $description]) {
                 $sig .= "* `\$$name`: `$type` $description  \n";
                 if (isset($this->psalmParams[$name])) {
