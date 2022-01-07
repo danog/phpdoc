@@ -590,7 +590,7 @@ class PhpDoc
     public function getFrontMatter(array $init = []): string
     {
         $result = '';
-        foreach ($init + $this->frontMatter as $key => $value) {
+        foreach (\array_merge($init, $this->frontMatter) as $key => $value) {
             $result .= "$key: ".Escaper::escapeWithDoubleQuotes($value)."\n";
         }
         return $result;
@@ -606,7 +606,7 @@ class PhpDoc
     private function getIndexFrontMatter(array $init = []): string
     {
         $result = '';
-        foreach ($init + $this->indexFrontMatter as $key => $value) {
+        foreach (\array_merge($init, $this->indexFrontMatter) as $key => $value) {
             $result .= "$key: ".Escaper::escapeWithDoubleQuotes($value)."\n";
         }
         return $result;
