@@ -130,10 +130,6 @@ abstract class GenericDoc
                 $relPath = $to;
                 $path = \implode('/', $relPath);
 
-                if ($path === '../../../danog/MadelineProto/EventHandler.md') {
-                    \var_dump($namespace);
-                }
-
                 if (!$desc = $see->getDescription()) {
                     if ($desc = $this->builder->getTitle($ref)) {
                         $desc = "`$ref`: $desc";
