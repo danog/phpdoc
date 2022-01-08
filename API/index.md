@@ -1,6 +1,7 @@
 ---
-title: danog/phpdoc
-description: Simple markdown PHPDOC documentation generator with psalm type annotation support.
+description: "Simple markdown PHPDOC documentation generator with psalm type annotation support."
+title: "danog/phpdoc"
+
 ---
 # `danog/phpdoc`
 

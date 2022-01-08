@@ -107,8 +107,10 @@ abstract class GenericDoc
      *
      * @return string
      */
-    public function seeAlso(): string
+    public function seeAlso(string $namespace): string
     {
+        $namespace = \explode('\\', $namespace);
+
         $empty = [];
         $seeAlso = '';
         foreach ($this->seeAlso as $see) {
@@ -122,27 +124,15 @@ abstract class GenericDoc
                     $seeAlso .= "* `$ref`\n";
                     continue;
                 }
-                $from = \explode('\\', $this->resolvedClassName.".md");
 
+                \array_shift($to);
+                \array_unshift($to, ...\array_fill(0, \count($namespace), '..'));
                 $relPath = $to;
-                foreach ($from as $depth => $dir) {
-                    // find first non-matching dir
-                    if ($dir === $to[$depth]) {
-                        // ignore this directory
-                        \array_shift($relPath);
-                    } else {
-                        // get number of remaining dirs to $from
-                        $remaining = \count($from) - $depth;
-                        if ($remaining > 1) {
-                            // add traversals up to first matching dir
-                            $padLength = (\count($relPath) + $remaining - 1) * -1;
-                            $relPath = \array_pad($relPath, $padLength, '..');
-                            break;
-                        }
-                        $relPath[0] = './'.$relPath[0];
-                    }
-                }
                 $path = \implode('/', $relPath);
+
+                if ($path === '../../../danog/MadelineProto/EventHandler.md') {
+                    \var_dump($namespace);
+                }
 
                 if (!$desc = $see->getDescription()) {
                     if ($desc = $this->builder->getTitle($ref)) {
@@ -168,13 +158,13 @@ abstract class GenericDoc
      *
      * @return string
      */
-    public function format(): string
+    public function format(?string $namespace = null): string
     {
         $authors = '';
         foreach ($this->authors as $author) {
             $authors .= "> Author: $author  \n";
         }
-        $seeAlso = $this->seeAlso();
+        $seeAlso = $this->seeAlso($namespace ?? $this->namespace);
         $frontMatter = $this->builder->getFrontMatter(
             [
                 'title' => "{$this->name}: {$this->title}",

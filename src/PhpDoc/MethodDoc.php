@@ -113,7 +113,7 @@ class MethodDoc extends GenericDoc
      *
      * @return string
      */
-    public function format(): string
+    public function format(?string $namespace = null): string
     {
         $sig = '### `'.$this->getSignature()."`";
         $sig .= "\n\n";
@@ -143,7 +143,7 @@ class MethodDoc extends GenericDoc
         if (isset($this->psalmReturn)) {
             $sig .= "\nFully typed return value:\n```\n".$this->psalmReturn."\n```";
         }
-        $sig .= $this->seeAlso();
+        $sig .= $this->seeAlso($namespace ?? $this->namespace);
         $sig .= "\n";
         return $sig;
     }

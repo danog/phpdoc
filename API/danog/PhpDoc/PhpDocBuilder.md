@@ -34,6 +34,7 @@ Create docblock builder.
 
 
 Parameters:
+
 * `$namespace`: `string` Namespace (defaults to package namespace)  
 
 
@@ -44,6 +45,7 @@ Set authors.
 
 
 Parameters:
+
 * `$authors`: `\phpDocumentor\Reflection\DocBlock\Tags\Author[]` Authors  
 
 
@@ -59,6 +61,7 @@ Set scan mode.
 
 
 Parameters:
+
 * `$mode`: `int` Scan mode.  
 
 
@@ -69,6 +72,7 @@ Set filter to ignore certain classes.
 
 
 Parameters:
+
 * `$ignore`: `callable`   
   Full type:
   ```
@@ -83,6 +87,7 @@ Set output directory.
 
 
 Parameters:
+
 * `$output`: `string` Output directory  
 
 
@@ -93,6 +98,7 @@ Set project name.
 
 
 Parameters:
+
 * `$name`: `string` Name  
 
 
@@ -103,6 +109,7 @@ Set project description.
 
 
 Parameters:
+
 * `$description`: `string` Project description  
 
 
@@ -113,6 +120,7 @@ Set project image.
 
 
 Parameters:
+
 * `$image`: `string` Project image  
 
 
@@ -123,6 +131,7 @@ Add Jekyll front matter.
 
 
 Parameters:
+
 * `$key`: `string` Key  
 * `$value`: `string` Value  
 
@@ -134,6 +143,7 @@ Add Jekyll index front matter.
 
 
 Parameters:
+
 * `$key`: `string` Key  
 * `$value`: `string` Value  
 

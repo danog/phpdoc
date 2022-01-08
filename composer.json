@@ -45,7 +45,8 @@
         "cs": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix -v --diff --dry-run",
         "cs-fix": "PHP_CS_FIXER_IGNORE_ENV=1 php-cs-fixer fix -v --diff",
         "psalm": "psalm",
-        "docs": "@phpdoc"
+        "docs": "@phpdoc",
+        "phpdoc": "bin/phpdoc API"
     },
     "config": {
         "allow-plugins": {

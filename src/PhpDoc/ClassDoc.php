@@ -114,7 +114,7 @@ class ClassDoc extends GenericDoc
      *
      * @return string
      */
-    public function format(): string
+    public function format(?string $namespace = null): string
     {
         $init = parent::format();
         if ($this->constants) {
@@ -136,7 +136,7 @@ class ClassDoc extends GenericDoc
             $init .= "\n";
             $init .= "## Methods:\n";
             foreach ($this->methods as $method) {
-                $init .= $method->format();
+                $init .= $method->format($namespace ?? $this->namespace);
                 $init .= "\n";
             }
         }
