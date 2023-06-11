@@ -131,7 +131,7 @@ class ClassDoc extends GenericDoc
             $init .= "\n";
             $init .= "## Method list:\n";
             foreach ($this->methods as $method) {
-                $init .= "* `".$method->getSignature()."`\n";
+                $init .= "* ".$method->getSignatureLink()."\n";
             }
             $init .= "\n";
             $init .= "## Methods:\n";

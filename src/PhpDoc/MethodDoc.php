@@ -45,7 +45,15 @@ class MethodDoc extends GenericDoc
 
         parent::__construct($doc, $method instanceof ReflectionMethod ? $method->getDeclaringClass() : $method);
 
-        foreach ($doc->getTags() as $tag) {
+        $docReflection = "/**\n";
+        foreach ($method->getParameters() as $param) {
+            $type = (string) ($param->getType() ?? 'mixed');
+            $docReflection .= " * @param $type \$".$param->getName()."\n";
+        }
+        $docReflection .= ' * @return '.($method->getReturnType() ?? 'mixed')."\n*/";
+        $docReflection = $this->builder->getFactory()->create($docReflection);
+
+        foreach ([...$doc->getTags(), ...$docReflection->getTags()] as $tag) {
             if ($tag instanceof Param && !isset($this->params[$tag->getVariableName()])) {
                 $this->params[$tag->getVariableName()] = [
                     $tag->getType(),
@@ -109,6 +117,20 @@ class MethodDoc extends GenericDoc
         return $sig;
     }
     /**
+     * Get method signature link.
+     *
+     * @return string
+     */
+    public function getSignatureLink(): string
+    {
+        $sig = $this->getSignature();
+        $sigLink = strtolower($sig);
+        $sigLink = preg_replace('/[^\w ]+/', ' ', $sigLink);
+        $sigLink = preg_replace('/ +/', ' ', $sigLink);
+        $sigLink = str_replace(' ', '-', $sigLink);
+        return "[`$sig`](#$sigLink)";
+    }
+    /**
      * Generate markdown for method.
      *
      * @return string
@@ -145,6 +167,7 @@ class MethodDoc extends GenericDoc
         }
         $sig .= $this->seeAlso($namespace ?? $this->namespace);
         $sig .= "\n";
+
         return $sig;
     }
 }
