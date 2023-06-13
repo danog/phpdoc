@@ -124,11 +124,22 @@ class MethodDoc extends GenericDoc
     public function getSignatureLink(): string
     {
         $sig = $this->getSignature();
+        $sigLink = $this->getSignatureAnchor();
+        return "[`$sig`](#$sigLink)";
+    }
+    /**
+     * Get method signature link.
+     *
+     * @return string
+     */
+    public function getSignatureAnchor(): string
+    {
+        $sig = $this->getSignature();
         $sigLink = strtolower($sig);
         $sigLink = preg_replace('/[^\w ]+/', ' ', $sigLink);
         $sigLink = preg_replace('/ +/', ' ', $sigLink);
         $sigLink = str_replace(' ', '-', $sigLink);
-        return "[`$sig`](#$sigLink)";
+        return $sigLink;
     }
     /**
      * Generate markdown for method.
