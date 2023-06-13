@@ -152,7 +152,7 @@ class MethodDoc extends GenericDoc
         $sig .= "\n\n";
         $sig .= $this->title;
         $sig .= "\n";
-        $sig .= $this->description;
+        $sig .= str_replace("\n", "  \n", $this->description);
         $sig .= "\n";
         if ($this->psalmParams || $this->params) {
             $sig .= "\nParameters:\n\n";
