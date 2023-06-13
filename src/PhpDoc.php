@@ -173,16 +173,26 @@ class PhpDoc
         return $this;
     }
     /**
+     * Resolve type aliases.
+     *
+     * @return void
+     */
+    public function resolveAliases(): void
+    {
+        $classList = ClassFinder::getClassesInNamespace($this->namespace, $this->mode);
+        foreach ($classList as $class) {
+            $this->addTypeAliases($class);
+        }
+    }
+    /**
      * Run documentor.
      *
      * @return self
      */
     public function run(): self
     {
+        $this->resolveAliases();
         $classList = ClassFinder::getClassesInNamespace($this->namespace, $this->mode);
-        foreach ($classList as $class) {
-            $this->addTypeAliases($class);
-        }
         $namespaces = [];
         foreach ($this->useMap as $orig => $aliases) {
             $class = \str_replace('\\', '/', $orig);

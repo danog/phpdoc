@@ -135,10 +135,10 @@ class MethodDoc extends GenericDoc
     public function getSignatureAnchor(): string
     {
         $sig = $this->getSignature();
-        $sigLink = strtolower($sig);
-        $sigLink = preg_replace('/[^\w ]+/', ' ', $sigLink);
-        $sigLink = preg_replace('/ +/', ' ', $sigLink);
-        $sigLink = str_replace(' ', '-', $sigLink);
+        $sigLink = \strtolower($sig);
+        $sigLink = \preg_replace('/[^\w ]+/', ' ', $sigLink);
+        $sigLink = \preg_replace('/ +/', ' ', $sigLink);
+        $sigLink = \str_replace(' ', '-', $sigLink);
         return $sigLink;
     }
     /**
