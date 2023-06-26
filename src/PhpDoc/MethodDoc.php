@@ -45,19 +45,27 @@ class MethodDoc extends GenericDoc
 
         parent::__construct($doc, $method instanceof ReflectionMethod ? $method->getDeclaringClass() : $method);
 
+        $order = [];
+
         $docReflection = "/**\n";
         foreach ($method->getParameters() as $param) {
+            $order []= $param->getName();
             $type = (string) ($param->getType() ?? 'mixed');
-            $docReflection .= " * @param $type \$".$param->getName()."\n";
+            $variadic = $param->isVariadic() ? '...' : '';
+            $docReflection .= " * @param $type $variadic\$".$param->getName()."\n";
         }
         $docReflection .= ' * @return '.($method->getReturnType() ?? 'mixed')."\n*/";
         $docReflection = $this->builder->getFactory()->create($docReflection);
 
+        $params = [];
+        $psalmParams = [];
+
         foreach ([...$doc->getTags(), ...$docReflection->getTags()] as $tag) {
-            if ($tag instanceof Param && !isset($this->params[$tag->getVariableName()])) {
-                $this->params[$tag->getVariableName()] = [
+            if ($tag instanceof Param && !isset($params[$tag->getVariableName()])) {
+                $params[$tag->getVariableName()] = [
                     $tag->getType(),
-                    $tag->getDescription()
+                    $tag->getDescription(),
+                    $tag->isVariadic()
                 ];
             } elseif ($tag instanceof Return_ && !isset($this->return)) {
                 $this->return = $tag;
@@ -67,15 +75,22 @@ class MethodDoc extends GenericDoc
                 [$type, $description] = \explode(" $", $tag->getDescription(), 2);
                 $description .= ' ';
                 [$varName, $description] = \explode(" ", $description, 2);
-                if (!$description && isset($this->params[$varName])) {
-                    $description = (string) $this->params[$varName][1];
+                if (!$description && isset($params[$varName])) {
+                    $description = (string) $params[$varName][1];
                 } else {
                     $description = new Description($description);
                 }
-                $this->psalmParams[$varName] = [
+                $psalmParams[$varName] = [
                     $type,
                     $description
                 ];
+            }
+        }
+
+        foreach ($order as $param) {
+            $this->params[$param] = $params[$param];
+            if (isset($psalmParams[$param])) {
+                $this->psalmParams[$param] = $psalmParams[$param];
             }
         }
 
@@ -103,8 +118,11 @@ class MethodDoc extends GenericDoc
     {
         $sig = $this->name;
         $sig .= "(";
-        foreach ($this->params as $var => [$type, $description]) {
+        foreach ($this->params as $var => [$type, $description, $variadic]) {
             $sig .= $type.' ';
+            if ($variadic) {
+                $sig .= '...';
+            }
             $sig .= "$".$var;
             $sig .= ', ';
         }
@@ -152,12 +170,13 @@ class MethodDoc extends GenericDoc
         $sig .= "\n\n";
         $sig .= $this->title;
         $sig .= "\n";
-        $sig .= str_replace("\n", "  \n", $this->description);
+        $sig .= \str_replace("\n", "  \n", $this->description);
         $sig .= "\n";
         if ($this->psalmParams || $this->params) {
             $sig .= "\nParameters:\n\n";
-            foreach ($this->params as $name => [$type, $description]) {
-                $sig .= "* `\$$name`: `$type` $description  \n";
+            foreach ($this->params as $name => [$type, $description, $variadic]) {
+                $variadic = $variadic ? '...' : '';
+                $sig .= "* `$variadic\$$name`: `$type` $description  \n";
                 if (isset($this->psalmParams[$name])) {
                     [$psalmType] = $this->psalmParams[$name];
                     $psalmType = \trim(\str_replace("\n", "\n  ", $psalmType));
