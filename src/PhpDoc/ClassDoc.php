@@ -6,9 +6,11 @@ use danog\PhpDoc\PhpDoc;
 use phpDocumentor\Reflection\DocBlock\Tags\Generic;
 use phpDocumentor\Reflection\DocBlock\Tags\InvalidTag;
 use phpDocumentor\Reflection\DocBlock\Tags\Property;
+use phpDocumentor\Reflection\DocBlock\Tags\Var_;
 use ReflectionClass;
 use ReflectionClassConstant;
 use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Class documentation builder.
@@ -47,7 +49,30 @@ class ClassDoc extends GenericDoc
 
         parent::__construct($doc, $reflectionClass);
 
-        $tags = $doc->getTags();
+        $docReflection = "/**\n";
+        foreach ($reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC & ~ReflectionProperty::IS_STATIC) as $property) {
+            $type = $property->getType()?->getName() ?? 'mixed';
+            $name = $property->getName();
+            $comment = '';
+            foreach ($this->builder->getFactory()->create($property->getDocComment() ?: '/** */')->getTags() as $tag) {
+                if ($tag instanceof Var_) {
+                    $comment = $tag->getDescription();
+                    $type = $tag->getType() ?? 'mixed';
+                    break;
+                }
+                if ($tag instanceof Generic && $tag->getName() === 'internal') {
+                    continue 2;
+                }
+            }
+            if (!$comment) {
+                $comment = trim($property->getDocComment() ?: '', "\n/* ");
+            }
+            $docReflection .= " * @property $type \$$name $comment\n";
+        }
+        $docReflection .= " */\n";
+        $docReflection = $this->builder->getFactory()->create($docReflection);
+
+        $tags = array_merge($docReflection->getTags(), $doc->getTags());
         foreach ($tags as $tag) {
             if ($tag instanceof Property && $tag->getVariableName()) {
                 /** @psalm-suppress InvalidPropertyAssignmentValue */
@@ -100,7 +125,7 @@ class ClassDoc extends GenericDoc
 
 
         foreach ($reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-            if (\str_starts_with($method->getName(), '__') && $method !== '__construct') {
+            if (\str_starts_with($method->getName(), '__') && $method->getName() !== '__construct') {
                 continue;
             }
             $this->methods[$method->getName()] = new MethodDoc($this->builder, $method);
@@ -127,6 +152,13 @@ class ClassDoc extends GenericDoc
                 $init .= "\n";
             }
         }
+        if ($this->properties) {
+            $init .= "## Properties\n";
+            foreach ($this->properties as $name => [$type, $description]) {
+                $init .= "* `\$$name`: `$type` $description";
+                $init .= "\n";
+            }
+        }
         if ($this->methods) {
             $init .= "\n";
             $init .= "## Method list:\n";
@@ -137,13 +169,6 @@ class ClassDoc extends GenericDoc
             $init .= "## Methods:\n";
             foreach ($this->methods as $method) {
                 $init .= $method->format($namespace ?? $this->namespace);
-                $init .= "\n";
-            }
-        }
-        if ($this->properties) {
-            $init .= "## Properties\n";
-            foreach ($this->properties as $name => [$type, $description]) {
-                $init .= "* `\$$name`: `$type` $description";
                 $init .= "\n";
             }
         }

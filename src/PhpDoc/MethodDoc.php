@@ -67,7 +67,7 @@ class MethodDoc extends GenericDoc
                     $tag->getDescription(),
                     $tag->isVariadic()
                 ];
-            } elseif ($tag instanceof Return_ && !isset($this->return)) {
+            } elseif ($tag instanceof Return_ && !isset($this->return) && $this->name !== '__construct') {
                 $this->return = $tag;
             } elseif ($tag instanceof Generic && $tag->getName() === 'psalm-return') {
                 $this->psalmReturn = $tag;
@@ -157,7 +157,7 @@ class MethodDoc extends GenericDoc
         $sigLink = \preg_replace('/[^\w ]+/', ' ', $sigLink);
         $sigLink = \preg_replace('/ +/', ' ', $sigLink);
         $sigLink = \str_replace(' ', '-', $sigLink);
-        return $sigLink;
+        return trim($sigLink, '-');
     }
     /**
      * Generate markdown for method.
