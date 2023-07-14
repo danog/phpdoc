@@ -51,7 +51,8 @@ class ClassDoc extends GenericDoc
 
         $docReflection = "/**\n";
         foreach ($reflectionClass->getProperties(ReflectionProperty::IS_PUBLIC & ~ReflectionProperty::IS_STATIC) as $property) {
-            $type = $property->getType()?->getName() ?? 'mixed';
+            $type = $property->getType() ?? 'mixed';
+            $type = (string) $type;
             $name = $property->getName();
             $comment = '';
             foreach ($this->builder->getFactory()->create($property->getDocComment() ?: '/** */')->getTags() as $tag) {
@@ -65,14 +66,14 @@ class ClassDoc extends GenericDoc
                 }
             }
             if (!$comment) {
-                $comment = trim($property->getDocComment() ?: '', "\n/* ");
+                $comment = \trim($property->getDocComment() ?: '', "\n/* ");
             }
             $docReflection .= " * @property $type \$$name $comment\n";
         }
         $docReflection .= " */\n";
         $docReflection = $this->builder->getFactory()->create($docReflection);
 
-        $tags = array_merge($docReflection->getTags(), $doc->getTags());
+        $tags = \array_merge($docReflection->getTags(), $doc->getTags());
         foreach ($tags as $tag) {
             if ($tag instanceof Property && $tag->getVariableName()) {
                 /** @psalm-suppress InvalidPropertyAssignmentValue */

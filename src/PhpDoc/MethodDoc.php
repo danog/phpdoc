@@ -46,10 +46,21 @@ class MethodDoc extends GenericDoc
         parent::__construct($doc, $method instanceof ReflectionMethod ? $method->getDeclaringClass() : $method);
 
         $order = [];
+        $optional = [];
 
         $docReflection = "/**\n";
         foreach ($method->getParameters() as $param) {
             $order []= $param->getName();
+            $opt = $param->isOptional() && !$param->isVariadic();
+            $default = '';
+            if ($opt) {
+                if ($default = $param->getDefaultValueConstantName()) {
+                    $default = "\\$default";
+                } else {
+                    $default = \str_replace([PHP_EOL, 'array (', ')'], ['', '[', ']'], \var_export($param->getDefaultValue(), true));
+                }
+            }
+            $optional[$param->getName()] = [$opt, $default];
             $type = (string) ($param->getType() ?? 'mixed');
             $variadic = $param->isVariadic() ? '...' : '';
             $docReflection .= " * @param $type $variadic\$".$param->getName()."\n";
@@ -65,7 +76,8 @@ class MethodDoc extends GenericDoc
                 $params[$tag->getVariableName()] = [
                     $tag->getType(),
                     $tag->getDescription(),
-                    $tag->isVariadic()
+                    $tag->isVariadic(),
+                    $optional[$tag->getVariableName()]
                 ];
             } elseif ($tag instanceof Return_ && !isset($this->return) && $this->name !== '__construct') {
                 $this->return = $tag;
@@ -82,7 +94,8 @@ class MethodDoc extends GenericDoc
                 }
                 $psalmParams[$varName] = [
                     $type,
-                    $description
+                    $description,
+                    $optional[$varName]
                 ];
             }
         }
@@ -118,12 +131,15 @@ class MethodDoc extends GenericDoc
     {
         $sig = $this->name;
         $sig .= "(";
-        foreach ($this->params as $var => [$type, $description, $variadic]) {
+        foreach ($this->params as $var => [$type, $description, $variadic, [$optional, $default]]) {
             $sig .= $type.' ';
             if ($variadic) {
                 $sig .= '...';
             }
             $sig .= "$".$var;
+            if ($optional) {
+                $sig .= " = ".$default;
+            }
             $sig .= ', ';
         }
         $sig = \trim($sig, ', ');
@@ -157,7 +173,7 @@ class MethodDoc extends GenericDoc
         $sigLink = \preg_replace('/[^\w ]+/', ' ', $sigLink);
         $sigLink = \preg_replace('/ +/', ' ', $sigLink);
         $sigLink = \str_replace(' ', '-', $sigLink);
-        return trim($sigLink, '-');
+        return \trim($sigLink, '-');
     }
     /**
      * Generate markdown for method.
