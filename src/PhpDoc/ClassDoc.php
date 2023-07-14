@@ -39,12 +39,7 @@ class ClassDoc extends GenericDoc
     {
         $this->builder = $builder;
         $this->name = $reflectionClass->getName();
-        $doc = $reflectionClass->getDocComment();
-        if (!$doc) {
-            \fprintf(STDERR, $reflectionClass->getName()." has no PHPDOC".PHP_EOL);
-            $this->ignore = true;
-            return;
-        }
+        $doc = $reflectionClass->getDocComment() ?: '/** */';
         $doc = $this->builder->getFactory()->create($doc);
 
         parent::__construct($doc, $reflectionClass);

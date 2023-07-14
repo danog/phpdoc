@@ -31,16 +31,7 @@ class MethodDoc extends GenericDoc
     {
         $this->builder = $phpDocBuilder;
         $this->name = $method->getName();
-        $doc = $method->getDocComment();
-        if (!$doc) {
-            $this->ignore = true;
-            if ($method instanceof ReflectionMethod) {
-                \fprintf(STDERR, $method->getDeclaringClass()->getName().'::'.$method->getName().' has no PHPDOC!'.PHP_EOL);
-            } else {
-                \fprintf(STDERR, $method->getName()." has no PHPDOC!".PHP_EOL);
-            }
-            return;
-        }
+        $doc = $method->getDocComment() ?: '/** */';
         $doc = $this->builder->getFactory()->create($doc);
 
         parent::__construct($doc, $method instanceof ReflectionMethod ? $method->getDeclaringClass() : $method);
@@ -84,7 +75,10 @@ class MethodDoc extends GenericDoc
             } elseif ($tag instanceof Generic && $tag->getName() === 'psalm-return') {
                 $this->psalmReturn = $tag;
             } elseif ($tag instanceof Generic && $tag->getName() === 'psalm-param') {
-                [$type, $description] = \explode(" $", $tag->getDescription(), 2);
+                $desc = $tag->getDescription();
+                $dollar = \strrpos($desc, '$');
+                $type = \substr($tag, 0, $dollar-1);
+                $description = \substr($tag, $dollar+1);
                 $description .= ' ';
                 [$varName, $description] = \explode(" ", $description, 2);
                 if (!$description && isset($params[$varName])) {
