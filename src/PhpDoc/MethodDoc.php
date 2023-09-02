@@ -162,7 +162,7 @@ class MethodDoc extends GenericDoc
      */
     public function getSignatureAnchor(): string
     {
-        $sig = $this->getSignature();
+        $sig = $this->name;
         $sigLink = \strtolower($sig);
         $sigLink = \preg_replace('/[^\w ]+/', ' ', $sigLink);
         $sigLink = \preg_replace('/ +/', ' ', $sigLink);

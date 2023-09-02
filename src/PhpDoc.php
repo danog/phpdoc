@@ -443,6 +443,10 @@ class PhpDoc
             $this->useMap[$class][$alias] = $import;
             $this->useMap[$class]['\\'.$alias] = $import;
         }
+
+        if ($reflectionClass instanceof ReflectionClass) {
+            array_map($this->addTypeAliases(...), $reflectionClass->getTraitNames());
+        }
     }
     /**
      * Create directory recursively.
