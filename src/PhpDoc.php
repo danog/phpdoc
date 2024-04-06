@@ -22,8 +22,12 @@ use danog\ClassFinder\ClassFinder;
 use danog\PhpDoc\PhpDoc\ClassDoc;
 use danog\PhpDoc\PhpDoc\FunctionDoc;
 use danog\PhpDoc\PhpDoc\GenericDoc;
-use phpDocumentor\Reflection\DocBlock\Tags\Author;
-use phpDocumentor\Reflection\DocBlockFactory;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocNode;
+use PHPStan\PhpDocParser\Lexer\Lexer;
+use PHPStan\PhpDocParser\Parser\ConstExprParser;
+use PHPStan\PhpDocParser\Parser\PhpDocParser;
+use PHPStan\PhpDocParser\Parser\TokenIterator;
+use PHPStan\PhpDocParser\Parser\TypeParser;
 use ReflectionClass;
 use ReflectionFunction;
 use Symfony\Component\Yaml\Escaper;
@@ -44,9 +48,13 @@ class PhpDoc
      */
     private int $mode = ClassFinder::ALLOW_ALL | ClassFinder::RECURSIVE_MODE;
     /**
-     * Docblock factory.
+     * PHPDOC parser.
      */
-    private DocBlockFactory $factory;
+    private PhpDocParser $parser;
+    /**
+     * Lexer.
+     */
+    private Lexer $lexer;
     /**
      * Authors.
      */
@@ -119,7 +127,14 @@ class PhpDoc
      */
     private function __construct(string $namespace)
     {
-        $this->factory = DocBlockFactory::createInstance();
+        $this->lexer = new Lexer();
+        $constExprParser = new ConstExprParser();
+        $typeParser = new TypeParser($constExprParser);
+        $this->parser = new PhpDocParser(
+            $typeParser,
+            $constExprParser,
+            textBetweenTagsBelongsToDescription: true
+        );
         $this->namespace = $namespace;
 
         $appRoot = new \danog\ClassFinder\AppConfig;
@@ -131,7 +146,7 @@ class PhpDoc
         $this->name = $json['name'] ?? '';
         $this->description = $json['description'] ?? '';
         foreach ($authors as $author) {
-            $this->authors []= new Author($author['name'], $author['email']);
+            $this->authors []= "{$author['name']} <{$author['email']}>";
         }
 
         if (!$this->namespace) {
@@ -445,7 +460,7 @@ class PhpDoc
         }
 
         if ($reflectionClass instanceof ReflectionClass) {
-            array_map($this->addTypeAliases(...), $reflectionClass->getTraitNames());
+            \array_map($this->addTypeAliases(...), $reflectionClass->getTraitNames());
         }
     }
     /**
@@ -487,15 +502,13 @@ class PhpDoc
     }
 
     /**
-     * Get docblock factory.
+     * Parse phpdoc.
      *
      * @internal
-     *
-     * @return DocBlockFactory
      */
-    public function getFactory(): DocBlockFactory
+    public function parse(string $phpdoc): PhpDocNode
     {
-        return $this->factory;
+        return $this->parser->parse(new TokenIterator($this->lexer->tokenize($phpdoc)));
     }
 
     /**
@@ -511,7 +524,7 @@ class PhpDoc
     /**
      * Get authors.
      *
-     * @return Author[]
+     * @return string[]
      */
     public function getAuthors(): array
     {
@@ -521,7 +534,7 @@ class PhpDoc
     /**
      * Set authors.
      *
-     * @param Author[] $authors Authors
+     * @param string[] $authors Authors
      *
      * @return self
      */

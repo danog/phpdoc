@@ -13,15 +13,13 @@
     "require": {
         "php": "^8.0",
         "danog/class-finder": "^0.4",
-        "phpdocumentor/reflection-docblock": "^5.2",
         "phpstan/phpdoc-parser": "^1.2",
         "symfony/yaml": "^6.0"
     },
     "require-dev": {
         "vimeo/psalm": "dev-master",
         "amphp/php-cs-fixer-config": "dev-master",
-        "friendsofphp/php-cs-fixer": "^2",
-        "phabel/phabel": "^1"
+        "friendsofphp/php-cs-fixer": "^2"
     },
     "authors": [
         {
@@ -51,12 +49,7 @@
     "config": {
         "allow-plugins": {
             "composer/package-versions-deprecated": true,
-            "phabel/phabel": true
-        }
-    },
-    "extra": {
-        "phabel": {
-            "revision": 0
+            "phabel/phabel": false
         }
     }
 }

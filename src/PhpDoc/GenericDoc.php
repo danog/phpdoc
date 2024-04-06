@@ -3,15 +3,9 @@
 namespace danog\PhpDoc\PhpDoc;
 
 use danog\PhpDoc\PhpDoc;
-use phpDocumentor\Reflection\DocBlock;
-use phpDocumentor\Reflection\DocBlock\Description;
-use phpDocumentor\Reflection\DocBlock\Tags\Author;
-use phpDocumentor\Reflection\DocBlock\Tags\Deprecated;
-use phpDocumentor\Reflection\DocBlock\Tags\Generic;
-use phpDocumentor\Reflection\DocBlock\Tags\Reference\Fqsen;
-use phpDocumentor\Reflection\DocBlock\Tags\Reference\Url;
-use phpDocumentor\Reflection\DocBlock\Tags\See;
-use phpDocumentor\Reflection\Fqsen as ReflectionFqsen;
+use PHPStan\PhpDocParser\Ast\PhpDoc\GenericTagValueNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode;
 use ReflectionClass;
 use ReflectionFunction;
 
@@ -37,17 +31,17 @@ abstract class GenericDoc
     /**
      * Description.
      */
-    protected Description $description;
+    protected string $description;
     /**
      * See also array.
      *
-     * @var array<string, See>
+     * @var array<string, GenericTagValueNode>
      */
     protected array $seeAlso = [];
     /**
      * Authors.
      *
-     * @var Author[]
+     * @var string[]
      */
     protected array $authors;
     /**
@@ -69,34 +63,39 @@ abstract class GenericDoc
     /**
      * Constructor.
      *
-     * @param DocBlock $doc
      * @param ReflectionClass|ReflectionFunction $reflectionClass
      */
-    public function __construct(DocBlock $doc, $reflectionClass)
+    public function __construct(PhpDocNode $doc, $reflectionClass)
     {
         $empty = [];
         $this->className = $reflectionClass->getName();
         $this->resolvedClassName = $this->builder->resolveTypeAlias($this->className, $this->className, $empty);
         $this->namespace = \str_replace('/', '\\', \dirname(\str_replace('\\', '/', $this->className)));
-        $this->title = $doc->getSummary();
-        $this->description = $doc->getDescription();
+        $description = '';
+        foreach ($doc->children as $child) {
+            if ($child instanceof PhpDocTextNode) {
+                $description .= $child->text."\n";
+            }
+        }
+        [$this->title, $this->description] = \explode("\n", \trim($description)."\n", 2);
         $tags = $doc->getTags();
 
         $this->authors = $this->builder->getAuthors();
         foreach ($tags as $tag) {
-            if ($tag instanceof Author) {
-                $this->authors []= $tag;
+            if ($tag->name === '@author') {
+                $tag = $tag->value;
+                \assert($tag instanceof GenericTagValueNode);
+                $this->authors []= $tag->value;
+                continue;
             }
-            if ($tag instanceof Deprecated) {
+            if ($tag->name === '@deprecated' || $tag->name === '@internal') {
                 $this->ignore = true;
                 break;
             }
-            if ($tag instanceof Generic && $tag->getName() === 'internal') {
-                $this->ignore = true;
-                break;
-            }
-            if ($tag instanceof See) {
-                $this->seeAlso[$tag->getReference()->__toString()] = $tag;
+            if ($tag->name === '@see') {
+                $tag = $tag->value;
+                \assert($tag instanceof GenericTagValueNode);
+                $this->seeAlso[$tag->value] = $tag;
             }
         }
         $this->authors = \array_unique($this->authors);
@@ -111,38 +110,9 @@ abstract class GenericDoc
     {
         $namespace = \explode('\\', $namespace);
 
-        $empty = [];
         $seeAlso = '';
         foreach ($this->seeAlso as $see) {
-            $ref = $see->getReference();
-            if ($ref instanceof Fqsen) {
-                $ref = (string) $ref;
-                $ref = $this->builder->resolveTypeAlias($this->className, $ref, $empty);
-
-                $to = \explode("\\", $ref.".md");
-                if (\count($to) === 2 || !$this->builder->hasClass($ref)) {
-                    $seeAlso .= "* `$ref`\n";
-                    continue;
-                }
-
-                \array_shift($to);
-                \array_unshift($to, ...\array_fill(0, \count($namespace), '..'));
-                $relPath = $to;
-                $path = \implode('/', $relPath);
-
-                if (!$desc = $see->getDescription()) {
-                    if ($desc = $this->builder->getTitle($ref)) {
-                        $desc = "`$ref`: $desc";
-                    } else {
-                        $desc = $ref;
-                    }
-                }
-                $seeAlso .= "* [$desc]($path)\n";
-            }
-            if ($ref instanceof Url) {
-                $desc = $see->getDescription() ?: $ref;
-                $seeAlso .= "* [$desc]($ref)\n";
-            }
+            $seeAlso .= "* ".$see->value."\n";
         }
         if ($seeAlso) {
             $seeAlso = "\n#### See also: \n$seeAlso\n\n";
@@ -208,7 +178,7 @@ abstract class GenericDoc
                 continue;
             }
             try {
-                $this->seeAlso[$type] = new See(new Fqsen(new ReflectionFqsen($type)));
+                $this->seeAlso[$type] = new GenericTagValueNode($type);
             } catch (\Throwable $e) {
             }
         }

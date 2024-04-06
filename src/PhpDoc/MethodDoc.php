@@ -3,10 +3,7 @@
 namespace danog\PhpDoc\PhpDoc;
 
 use danog\PhpDoc\PhpDoc;
-use phpDocumentor\Reflection\DocBlock\Description;
-use phpDocumentor\Reflection\DocBlock\Tags\Generic;
-use phpDocumentor\Reflection\DocBlock\Tags\Param;
-use phpDocumentor\Reflection\DocBlock\Tags\Return_;
+use PHPStan\PhpDocParser\Ast\PhpDoc\ReturnTagValueNode;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 
@@ -17,10 +14,8 @@ use ReflectionMethod;
  */
 class MethodDoc extends GenericDoc
 {
-    private Return_ $return;
-    private string $psalmReturn;
+    private ReturnTagValueNode $return;
     private array $params = [];
-    private array $psalmParams = [];
     /**
      * Constructor.
      *
@@ -32,16 +27,17 @@ class MethodDoc extends GenericDoc
         $this->builder = $phpDocBuilder;
         $this->name = $method->getName();
         $doc = $method->getDocComment() ?: '/** */';
-        $doc = $this->builder->getFactory()->create($doc);
+        $doc = $this->builder->parse($doc);
 
         parent::__construct($doc, $method instanceof ReflectionMethod ? $method->getDeclaringClass() : $method);
 
         $order = [];
         $optional = [];
+        $params = [];
 
         $docReflection = "/**\n";
         foreach ($method->getParameters() as $param) {
-            $order []= $param->getName();
+            $order []= '$'.$param->getName();
             $opt = $param->isOptional() && !$param->isVariadic();
             $default = '';
             if ($opt) {
@@ -51,68 +47,44 @@ class MethodDoc extends GenericDoc
                     $default = \str_replace([PHP_EOL, 'array (', ')'], ['', '[', ']'], \var_export($param->getDefaultValue(), true));
                 }
             }
-            $optional[$param->getName()] = [$opt, $default];
+            $optional['$'.$param->getName()] = [$opt, $default];
             $type = (string) ($param->getType() ?? 'mixed');
-            $variadic = $param->isVariadic() ? '...' : '';
-            $docReflection .= " * @param $type $variadic\$".$param->getName()."\n";
+            $params['$'.$param->getName()] = [
+                $type,
+                '',
+                $param->isVariadic(),
+                $optional['$'.$param->getName()]
+            ];
         }
-        $docReflection .= ' * @return '.($method->getReturnType() ?? 'mixed')."\n*/";
-        $docReflection = $this->builder->getFactory()->create($docReflection);
 
-        $params = [];
-        $psalmParams = [];
-
-        foreach ([...$doc->getTags(), ...$docReflection->getTags()] as $tag) {
-            if ($tag instanceof Param && !isset($params[$tag->getVariableName()])) {
-                $params[$tag->getVariableName()] = [
-                    $tag->getType(),
-                    $tag->getDescription(),
-                    $tag->isVariadic(),
-                    $optional[$tag->getVariableName()]
+        foreach (['@param', '@psalm-param', '@phpstan-param'] as $t) {
+            foreach ($doc->getParamTagValues($t) as $tag) {
+                $params[$tag->parameterName] ??= [
+                    $tag->type,
+                    $tag->description,
+                    $tag->isVariadic,
+                    $optional[$tag->parameterName]
                 ];
-            } elseif ($tag instanceof Return_ && !isset($this->return) && $this->name !== '__construct') {
-                $this->return = $tag;
-            } elseif ($tag instanceof Generic && $tag->getName() === 'psalm-return') {
-                $this->psalmReturn = $tag;
-            } elseif ($tag instanceof Generic && $tag->getName() === 'psalm-param') {
-                $desc = $tag->getDescription();
-                $dollar = \strrpos($desc, '$');
-                $type = \substr($tag, 0, $dollar-1);
-                $description = \substr($tag, $dollar+1);
-                $description .= ' ';
-                [$varName, $description] = \explode(" ", $description, 2);
-                if (!$description && isset($params[$varName])) {
-                    $description = (string) $params[$varName][1];
-                } else {
-                    $description = new Description($description);
+                $params[$tag->parameterName][0] = $tag->type;
+                $params[$tag->parameterName][1] = $tag->description;
+            }
+        }
+        if ($this->name !== '__construct') {
+            foreach (['@return', '@psalm-return', '@phpstan-return'] as $t) {
+                foreach ($doc->getReturnTagValues($t) as $tag) {
+                    $this->return = $tag;
                 }
-                $psalmParams[$varName] = [
-                    $type,
-                    $description,
-                    $optional[$varName]
-                ];
             }
         }
 
         foreach ($order as $param) {
             $this->params[$param] = $params[$param];
-            if (isset($psalmParams[$param])) {
-                $this->psalmParams[$param] = $psalmParams[$param];
-            }
         }
 
         foreach ($this->params as &$param) {
             if (isset($param[0])) {
                 $param[0] = $this->resolveTypeAlias($param[0]);
             }
-        }
-        foreach ($this->psalmParams as &$param) {
-            if (isset($param[0])) {
-                $param[0] = $this->resolveTypeAlias($param[0]);
-            }
-        }
-        if (isset($this->psalmReturn)) {
-            $this->psalmReturn = $this->resolveTypeAlias($this->psalmReturn);
         }
     }
 
@@ -130,7 +102,7 @@ class MethodDoc extends GenericDoc
             if ($variadic) {
                 $sig .= '...';
             }
-            $sig .= "$".$var;
+            $sig .= $var;
             if ($optional) {
                 $sig .= " = ".$default;
             }
@@ -140,7 +112,7 @@ class MethodDoc extends GenericDoc
         $sig .= ')';
         if (isset($this->return)) {
             $sig .= ': ';
-            $sig .= $this->resolveTypeAlias($this->return);
+            $sig .= $this->resolveTypeAlias((string) $this->return->type);
         }
         return $sig;
     }
@@ -182,28 +154,16 @@ class MethodDoc extends GenericDoc
         $sig .= "\n";
         $sig .= \str_replace("\n", "  \n", $this->description);
         $sig .= "\n";
-        if ($this->psalmParams || $this->params) {
+        if ($this->params) {
             $sig .= "\nParameters:\n\n";
             foreach ($this->params as $name => [$type, $description, $variadic]) {
                 $variadic = $variadic ? '...' : '';
-                $sig .= "* `$variadic\$$name`: `$type` $description  \n";
-                if (isset($this->psalmParams[$name])) {
-                    [$psalmType] = $this->psalmParams[$name];
-                    $psalmType = \trim(\str_replace("\n", "\n  ", $psalmType));
-
-                    $sig .= "  Full type:\n";
-                    $sig .= "  ```\n";
-                    $sig .= "  $psalmType\n";
-                    $sig .= "  ```\n";
-                }
+                $sig .= "* `$variadic$name`: `$type` $description  \n";
             }
             $sig .= "\n";
         }
-        if (isset($this->return) && $this->return->getDescription() && $this->return->getDescription()->render()) {
-            $sig .= "\nReturn value: ".$this->return->getDescription()."\n";
-        }
-        if (isset($this->psalmReturn)) {
-            $sig .= "\nFully typed return value:\n```\n".$this->psalmReturn."\n```";
+        if (isset($this->return) && $this->return->description) {
+            $sig .= "\nReturn value: ".$this->return->description."\n";
         }
         $sig .= $this->seeAlso($namespace ?? $this->namespace);
         $sig .= "\n";

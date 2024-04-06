@@ -18,8 +18,6 @@
 
 namespace danog\PhpDoc;
 
-use phpDocumentor\Reflection\DocBlock\Tags\Author;
-
 /**
  * PHP documentation builder.
  */
@@ -52,7 +50,7 @@ final class PhpDocBuilder
     /**
      * Set authors.
      *
-     * @param Author[] $authors Authors
+     * @param string[] $authors Authors
      *
      * @return self
      */

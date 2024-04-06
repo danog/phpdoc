@@ -3,10 +3,9 @@
 namespace danog\PhpDoc\PhpDoc;
 
 use danog\PhpDoc\PhpDoc;
-use phpDocumentor\Reflection\DocBlock\Tags\Generic;
-use phpDocumentor\Reflection\DocBlock\Tags\InvalidTag;
-use phpDocumentor\Reflection\DocBlock\Tags\Property;
-use phpDocumentor\Reflection\DocBlock\Tags\Var_;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PropertyTagValueNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\VarTagValueNode;
 use ReflectionClass;
 use ReflectionClassConstant;
 use ReflectionMethod;
@@ -40,7 +39,7 @@ class ClassDoc extends GenericDoc
         $this->builder = $builder;
         $this->name = $reflectionClass->getName();
         $doc = $reflectionClass->getDocComment() ?: '/** */';
-        $doc = $this->builder->getFactory()->create($doc);
+        $doc = $this->builder->parse($doc);
 
         parent::__construct($doc, $reflectionClass);
 
@@ -50,13 +49,15 @@ class ClassDoc extends GenericDoc
             $type = (string) $type;
             $name = $property->getName();
             $comment = '';
-            foreach ($this->builder->getFactory()->create($property->getDocComment() ?: '/** */')->getTags() as $tag) {
-                if ($tag instanceof Var_) {
-                    $comment = $tag->getDescription();
-                    $type = $tag->getType() ?? 'mixed';
+            foreach ($this->builder->parse($property->getDocComment() ?: '/** */')->getTags() as $tag) {
+                if ($tag->name === '@var') {
+                    $tag = $tag->value;
+                    \assert($tag instanceof VarTagValueNode);
+                    $type = (string) $tag->type;
+                    $comment = $tag->description;
                     break;
                 }
-                if ($tag instanceof Generic && $tag->getName() === 'internal') {
+                if ($tag->name === 'internal') {
                     continue 2;
                 }
             }
@@ -66,27 +67,17 @@ class ClassDoc extends GenericDoc
             $docReflection .= " * @property $type \$$name $comment\n";
         }
         $docReflection .= " */\n";
-        $docReflection = $this->builder->getFactory()->create($docReflection);
+        $docReflection = $this->builder->parse($docReflection);
 
         $tags = \array_merge($docReflection->getTags(), $doc->getTags());
         foreach ($tags as $tag) {
-            if ($tag instanceof Property && $tag->getVariableName()) {
+            if ($tag->name === 'property') {
+                $tag = $tag->value;
+                \assert($tag instanceof PropertyTagValueNode);
                 /** @psalm-suppress InvalidPropertyAssignmentValue */
-                $this->properties[$tag->getVariableName()] = [
-                    $tag->getType(),
-                    $tag->getDescription()
-                ];
-            }
-            if ($tag instanceof InvalidTag && $tag->getName() === 'property') {
-                [$type, $description] = \explode(" $", $tag->render(), 2);
-                $description .= ' ';
-                [$varName, $description] = \explode(" ", $description, 2);
-                $type = \str_replace('@property ', '', $type);
-                $description ??= '';
-                /** @psalm-suppress InvalidPropertyAssignmentValue */
-                $this->properties[$varName] = [
-                    $type,
-                    $description
+                $this->properties[$tag->propertyName] = [
+                    (string) $tag->type,
+                    $tag->description
                 ];
             }
         }
@@ -97,19 +88,17 @@ class ClassDoc extends GenericDoc
             }
             $description = '';
             if ($refl->getDocComment()) {
-                $docConst = $this->builder->getFactory()->create($refl->getDocComment());
                 if ($this->builder->shouldIgnore($refl->getDeclaringClass()->getName())) {
                     continue;
                 }
-                foreach ($docConst->getTags() as $tag) {
-                    if ($tag instanceof Generic && $tag->getName() === 'internal') {
-                        continue 2;
-                    }
+                $docConst = $this->builder->parse($refl->getDocComment());
+                if ($docConst->getTagsByName('internal')) {
+                    continue;
                 }
-                $description .= $docConst->getSummary();
-                if ($docConst->getDescription()) {
-                    $description .= "\n\n";
-                    $description .= $docConst->getDescription();
+                foreach ($docConst->children as $node) {
+                    if ($node instanceof PhpDocTextNode) {
+                        $description .= $node->text."\n";
+                    }
                 }
             }
             $description = \trim($description);
