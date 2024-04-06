@@ -138,12 +138,7 @@ class MethodDoc extends GenericDoc
      */
     public function getSignatureAnchor(): string
     {
-        $sig = $this->getSignature();
-        $sigLink = \strtolower($sig);
-        $sigLink = \preg_replace('/[^\w ]+/', ' ', $sigLink);
-        $sigLink = \preg_replace('/ +/', ' ', $sigLink);
-        $sigLink = \str_replace(' ', '-', $sigLink);
-        return \trim($sigLink, '-');
+        return $this->name;
     }
     /**
      * Generate markdown for method.
@@ -152,7 +147,7 @@ class MethodDoc extends GenericDoc
      */
     public function format(?string $namespace = null): string
     {
-        $sig = '### `'.$this->getSignature()."`";
+        $sig = '### <a name="'.$this->name.'"></a> `'.$this->getSignature()."`";
         $sig .= "\n\n";
         $sig .= $this->title;
         $sig .= "\n";

@@ -3,6 +3,7 @@
 namespace danog\PhpDoc\PhpDoc;
 
 use danog\PhpDoc\PhpDoc;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTextNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PropertyTagValueNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\VarTagValueNode;
@@ -49,20 +50,20 @@ class ClassDoc extends GenericDoc
             $type = (string) $type;
             $name = $property->getName();
             $comment = '';
-            foreach ($this->builder->parse($property->getDocComment() ?: '/** */')->getTags() as $tag) {
-                if ($tag->name === '@var') {
-                    $tag = $tag->value;
-                    \assert($tag instanceof VarTagValueNode);
-                    $type = (string) $tag->type;
-                    $comment = $tag->description;
-                    break;
+            foreach ($this->builder->parse($property->getDocComment() ?: '/** */')->children as $tag) {
+                if ($tag instanceof PhpDocTagNode) {
+                    if ($tag->name === '@var') {
+                        $tag = $tag->value;
+                        \assert($tag instanceof VarTagValueNode);
+                        $type = (string) $tag->type;
+                        $comment .= $tag->description."\n";
+                        break;
+                    } elseif ($tag->name === '@internal') {
+                        continue 2;
+                    }
+                } elseif ($tag instanceof PhpDocTextNode) {
+                    $comment .= $tag->text."\n";
                 }
-                if ($tag->name === 'internal') {
-                    continue 2;
-                }
-            }
-            if (!$comment) {
-                $comment = \trim($property->getDocComment() ?: '', "\n/* ");
             }
             $docReflection .= " * @property $type \$$name $comment\n";
         }
@@ -71,7 +72,7 @@ class ClassDoc extends GenericDoc
 
         $tags = \array_merge($docReflection->getTags(), $doc->getTags());
         foreach ($tags as $tag) {
-            if ($tag->name === 'property') {
+            if ($tag->name === '@property') {
                 $tag = $tag->value;
                 \assert($tag instanceof PropertyTagValueNode);
                 /** @psalm-suppress InvalidPropertyAssignmentValue */
@@ -140,7 +141,7 @@ class ClassDoc extends GenericDoc
         if ($this->properties) {
             $init .= "## Properties\n";
             foreach ($this->properties as $name => [$type, $description]) {
-                $init .= "* `\$$name`: `$type` $description";
+                $init .= "* `$name`: `$type` $description";
                 $init .= "\n";
             }
         }
