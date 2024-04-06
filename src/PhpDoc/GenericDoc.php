@@ -35,7 +35,7 @@ abstract class GenericDoc
     /**
      * See also array.
      *
-     * @var array<string, GenericTagValueNode>
+     * @var array<string, string>
      */
     protected array $seeAlso = [];
     /**
@@ -95,7 +95,7 @@ abstract class GenericDoc
             if ($tag->name === '@see') {
                 $tag = $tag->value;
                 \assert($tag instanceof GenericTagValueNode);
-                $this->seeAlso[$tag->value] = $tag;
+                $this->seeAlso[$tag->value] = $tag->value;
             }
         }
         $this->authors = \array_unique($this->authors);
@@ -111,8 +111,36 @@ abstract class GenericDoc
         $namespace = \explode('\\', $namespace);
 
         $seeAlso = '';
-        foreach ($this->seeAlso as $see) {
-            $seeAlso .= "* ".$see->value."\n";
+        $empty = [];
+        foreach ($this->seeAlso as $ref) {
+            if (\str_starts_with(\trim($ref), 'http')) {
+                [$url, $desc] = \explode(' ', $ref.' ');
+                $desc = $desc ?: $url;
+                $seeAlso .= "* [$desc]($url)\n";
+            } else {
+                [$type, $desc] = \explode(' ', $ref.' ');
+                $ref = $this->builder->resolveTypeAlias($this->className, $type, $empty);
+
+                $to = \explode("\\", $ref.".md");
+                if (\count($to) === 2 || !$this->builder->hasClass($ref)) {
+                    $seeAlso .= "* `$ref`\n";
+                    continue;
+                }
+
+                \array_shift($to);
+                \array_unshift($to, ...\array_fill(0, \count($namespace), '..'));
+                $relPath = $to;
+                $path = \implode('/', $relPath);
+
+                if (!$desc) {
+                    if ($desc = $this->builder->getTitle($ref)) {
+                        $desc = "`$ref`: $desc";
+                    } else {
+                        $desc = $ref;
+                    }
+                }
+                $seeAlso .= "* [$desc]($path)\n";
+            }
         }
         if ($seeAlso) {
             $seeAlso = "\n#### See also: \n$seeAlso\n\n";
@@ -177,8 +205,11 @@ abstract class GenericDoc
             if (\str_contains($type, ' ')) {
                 continue;
             }
+            if (\is_numeric($type) || $type === 'T') {
+                continue;
+            }
             try {
-                $this->seeAlso[$type] = new GenericTagValueNode($type);
+                $this->seeAlso[$type] = $type;
             } catch (\Throwable $e) {
             }
         }

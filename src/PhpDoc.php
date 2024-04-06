@@ -394,7 +394,7 @@ class PhpDoc
             return "?".$this->resolveTypeAlias($fromClass, \substr($name, 1), $resolved);
         }
         $res = $this->useMap[$fromClass][$name] ?? $name;
-        if ($res[0] !== '\\' && !self::isScalar($res)) {
+        if ($res[0] !== '\\' && !self::isScalar($res) && \str_contains($res, '\\')) {
             $res = "\\$res";
         }
         $resolved []= $res;

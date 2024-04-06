@@ -3,7 +3,6 @@
 namespace danog\PhpDoc\PhpDoc;
 
 use danog\PhpDoc\PhpDoc;
-use PHPStan\PhpDocParser\Ast\PhpDoc\ReturnTagValueNode;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 
@@ -14,7 +13,8 @@ use ReflectionMethod;
  */
 class MethodDoc extends GenericDoc
 {
-    private ReturnTagValueNode $return;
+    private string $return;
+    private string $returnDescription;
     private array $params = [];
     /**
      * Constructor.
@@ -35,7 +35,6 @@ class MethodDoc extends GenericDoc
         $optional = [];
         $params = [];
 
-        $docReflection = "/**\n";
         foreach ($method->getParameters() as $param) {
             $order []= '$'.$param->getName();
             $opt = $param->isOptional() && !$param->isVariadic();
@@ -72,9 +71,14 @@ class MethodDoc extends GenericDoc
         if ($this->name !== '__construct') {
             foreach (['@return', '@psalm-return', '@phpstan-return'] as $t) {
                 foreach ($doc->getReturnTagValues($t) as $tag) {
-                    $this->return = $tag;
+                    $this->return = (string) $tag->type;
+                    $this->returnDescription = $tag->description;
                 }
             }
+        }
+        if (!isset($this->return) && $ret = $method->getReturnType()) {
+            $this->return = (string) $ret;
+            $this->returnDescription = '';
         }
 
         foreach ($order as $param) {
@@ -112,7 +116,7 @@ class MethodDoc extends GenericDoc
         $sig .= ')';
         if (isset($this->return)) {
             $sig .= ': ';
-            $sig .= $this->resolveTypeAlias((string) $this->return->type);
+            $sig .= $this->resolveTypeAlias($this->return);
         }
         return $sig;
     }
@@ -162,8 +166,8 @@ class MethodDoc extends GenericDoc
             }
             $sig .= "\n";
         }
-        if (isset($this->return) && $this->return->description) {
-            $sig .= "\nReturn value: ".$this->return->description."\n";
+        if (isset($this->returnDescription) && $this->returnDescription) {
+            $sig .= "\nReturn value: ".$this->returnDescription."\n";
         }
         $sig .= $this->seeAlso($namespace ?? $this->namespace);
         $sig .= "\n";
